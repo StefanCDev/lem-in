@@ -1,0 +1,112 @@
+type Vertex struct {
+	Name  string
+	Start bool
+	End   bool
+	Links []*Vertex
+}
+
+type Flow struct {
+	PathComb   [][]Vertex
+	TotalTurns int
+}
+
+// Step 1: Find all possible individual paths
+func RecursivePathFinder(Node *Vertex, route []Vertex, AllPaths *[][]Vertex) {
+	if Node.End {
+		route = append(route, *Node)
+		sepRoute := make([]Vertex, len(route))
+		copy(sepRoute, route)
+		*AllPaths = append(*AllPaths, sepRoute)
+		return
+	}
+
+	// Check whether we have added the current vertex to the route
+	if inArray(route, *Node) {
+		return
+	}
+
+	// If we haven't added the current vertex to the route, add it now
+	route = append(route, *Node)
+
+	for _, v := range Node.Links {
+		RecursivePathFinder(v, route, AllPaths)
+	}
+}
+
+// Step 2: Find all combinations of non-overlapping paths
+func CombinePaths(AllPossiblePaths [][]Vertex) []Flow {
+	Result := make([]Flow, 0)
+
+	// Helper function to check if two paths overlap
+	overlap := func(path1, path2 []Vertex) bool {
+		for _, v1 := range path1 {
+			for _, v2 := range path2 {
+				if v1 == v2 {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	// Helper function to check if a path is already included in a flow
+	alreadyIncluded := func(flow Flow, path []Vertex) bool {
+		for _, existingPaths := range flow.PathComb {
+			if reflect.DeepEqual(existingPaths, path) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Combine paths
+	for _, path := range AllPossiblePaths {
+		// Check if the path overlaps with any existing flow
+		overlaps := false
+		for i := range Result {
+			if overlap(Result[i].PathComb[0], path) {
+				overlaps = true
+				break
+			}
+		}
+
+		// If the path does not overlap, create a new flow
+		if !overlaps {
+			newFlow := Flow{PathComb: [][]Vertex{path}}
+			Result = append(Result, newFlow)
+		} else {
+			// If the path overlaps, add it to the existing flows if not already included
+			for i := range Result {
+				if !alreadyIncluded(Result[i], path) {
+					Result[i].PathComb = append(Result[i].PathComb, path)
+					break
+				}
+			}
+		}
+	}
+
+	return Result
+}
+
+// Step 3: Find the Maximum Flow
+func (F *Flow) FindTotalTurns(TotalAnts int) {
+	// Your implementation for finding the maximum flow here
+	// ...
+
+	// Example code to calculate TotalTurns
+	F.TotalTurns = 0
+	for _, path := range F.PathComb {
+		F.TotalTurns += len(path) - 1
+	}
+}
+
+func inArray(s []Vertex, vp Vertex) bool {
+	for _, v := range s {
+		if v == vp {
+			return true
+		}
+	}
+	return false
+}
+
+
